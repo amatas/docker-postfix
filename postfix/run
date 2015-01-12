@@ -1,0 +1,18 @@
+#!/bin/bash
+
+RELAY_SERVER_HOST=${RELAY_SERVER_HOST:-"localhost"}
+RELAY_SERVER_USER=${RELAY_SERVER_USER:-"user"}
+RELAY_SERVER_PASSWORD=${RELAY_SERVER_PASSWORD:-"password"}
+
+cp /postfix/main.cf /etc/postfix/main.cf
+sed -e "s|RELAY_SERVER_HOST|$RELAY_SERVER_HOST|g" -i /etc/postfix/main.cf
+
+
+echo "$RELAY_SERVER_HOST:587 $RELAY_SERVER_USER:$RELAY_SERVER_PASSWORD" > /etc/postfix/smtp_relay_credentials
+chmod 0600 /etc/postfix/smtp_relay_credentials
+postmap /etc/postfix/smtp_relay_credentials
+
+syslog-ng -p /var/run/syslog-ng.pid --no-caps
+/usr/sbin/postfix -c /etc/postfix start
+
+tail -f /var/log/maillog
